@@ -54,4 +54,4 @@ def compute(context):
 
 # Dependencies
 
-[[../percussion_lab/solitary]] [[../percussion_lab/companions]] [[../percussion_lab/gathering]] [[../percussion_lab/swarming]] [[../percussion_lab/peak]] [[../percussion_lab/dispersing]] [[../percussion_lab/threading]] [[../percussion_lab/resting]]
+[[solitary]] [[companions]] [[gathering]] [[swarming]] [[peak]] [[dispersing]] [[threading]] [[resting]]
