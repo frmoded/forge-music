@@ -1,0 +1,868 @@
+
+/* Forge Output view */
+.forge-output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-weight: 600;
+}
+
+.forge-output-body {
+  padding: 8px;
+  overflow-y: auto;
+  height: calc(100% - 40px);
+}
+
+.forge-output-entry {
+  margin-bottom: 12px;
+  border-left: 3px solid var(--interactive-accent);
+  padding-left: 8px;
+}
+
+.forge-output-meta {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.forge-output-id {
+  font-weight: 600;
+  color: var(--interactive-accent);
+}
+
+.forge-output-time {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.forge-output-stdout,
+.forge-output-result {
+  margin: 2px 0;
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  background: var(--background-secondary);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.forge-output-message {
+  margin: 2px 0;
+  white-space: pre-wrap;
+}
+
+.forge-output-entry.is-error {
+  border-left-color: var(--text-error, #d33);
+}
+
+.forge-output-error {
+  margin: 2px 0;
+  color: var(--text-error, #d33);
+  font-weight: 500;
+  white-space: pre-wrap;
+}
+
+.forge-output-musicxml {
+  margin: 6px 0;
+  background: var(--background-primary);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/* v0.2.140 — score-area scroll container. Long scores (e.g.
+   forge-music/murmuration with multi-page output) overflow the
+   output panel's natural height. Cap the score area at a
+   reasonable viewport-fraction and let the user scroll the rest
+   into view. The Verovio multi-page wrapper (.forge-verovio-pages)
+   stacks pages vertically as block elements. */
+.forge-output-score {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* v0.2.140 — Verovio multi-page wrapper. Each `<svg>` inside is a
+   standalone page from Verovio's auto-pagination. Stacked vertically
+   with a small gap so page boundaries are visible without being
+   intrusive. */
+.forge-verovio-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forge-output-musicxml svg,
+.forge-output-score svg,
+.forge-verovio-pages svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.forge-midi-player {
+  display: block;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.forge-output-score .note {
+  cursor: pointer;
+}
+
+.forge-output-score .note:hover {
+  fill: var(--interactive-accent);
+}
+
+.forge-output-score .note.is-playing,
+.forge-output-score .note.is-playing * {
+  fill: #d97706;
+  stroke: #d97706;
+  transition: fill 0.05s linear, stroke 0.05s linear;
+}
+
+.forge-output-downloads {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.forge-output-download {
+  font-size: 0.78em;
+  padding: 2px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.forge-output-download:hover {
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+/* Forge Edges side panel */
+.forge-edges-view {
+  padding: 0;
+}
+
+.forge-edges-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.forge-edges-title {
+  font-weight: 600;
+}
+
+.forge-edges-body {
+  padding: 8px 12px;
+  overflow-y: auto;
+}
+
+.forge-edges-active {
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+}
+
+.forge-edges-section {
+  margin-bottom: 16px;
+}
+
+.forge-edges-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.forge-edges-section-head h4 {
+  margin: 0;
+}
+
+.forge-edges-bulk button {
+  font-size: 0.8em;
+  margin-left: 4px;
+}
+
+.forge-edges-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.forge-edges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+  font-size: 0.9em;
+}
+
+.forge-edges-row.is-frozen {
+  background: var(--background-secondary);
+}
+
+.forge-edges-link {
+  flex: 1;
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.forge-edges-state {
+  font-size: 0.75em;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.forge-edges-state-live {
+  background: var(--background-modifier-success, #2c5);
+  color: var(--text-on-accent, white);
+}
+
+.forge-edges-state-frozen {
+  background: var(--background-modifier-cover, #88c);
+  color: var(--text-on-accent, white);
+}
+
+.forge-edges-time {
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+.forge-edges-toggle {
+  font-size: 0.8em;
+}
+
+.forge-edges-snapshot-link {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.forge-edges-empty {
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+
+.forge-edges-drift {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid #d97706;
+  border-radius: 4px;
+  background: var(--background-secondary);
+}
+
+.forge-edges-drift-icon {
+  color: #d97706;
+  font-size: 1.1em;
+  flex-shrink: 0;
+}
+
+.forge-edges-drift-msg {
+  flex: 1;
+  font-size: 0.85em;
+  color: var(--text-normal);
+}
+
+.forge-edges-drift-msg div {
+  margin: 2px 0;
+}
+
+.forge-edges-drift-actions {
+  flex-shrink: 0;
+}
+
+.forge-edges-drift-actions button {
+  font-size: 0.8em;
+}
+
+/* Generation modal spinner */
+.forge-generation-modal .modal-content {
+  padding: 0;
+}
+
+.forge-generation-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 40px;
+}
+
+.forge-spinner-ring {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: forge-spin 0.8s linear infinite;
+}
+
+.forge-generation-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95em;
+}
+
+@keyframes forge-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Hover popover */
+.forge-edge-popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 280px;
+  max-width: 360px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  padding: 12px;
+  font-size: 0.9em;
+}
+
+.forge-edge-popover-pill-row {
+  margin-bottom: 8px;
+}
+
+.forge-edge-popover-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.forge-edge-popover-pill.is-live {
+  background: #16a34a;
+}
+
+.forge-edge-popover-pill.is-frozen {
+  background: #d97706;
+}
+
+.forge-edge-popover-pill.is-none {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.forge-edge-popover-pill-icon {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.forge-edge-popover-path {
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+  color: var(--text-normal);
+  margin-bottom: 6px;
+  word-break: break-all;
+}
+
+.forge-edge-popover-arrow {
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+.forge-edge-popover-time {
+  font-size: 0.78em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.forge-edge-popover-empty {
+  font-size: 0.85em;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.forge-edge-popover-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.forge-edge-popover-open {
+  font-size: 0.78em;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.forge-edge-popover-open:hover {
+  color: var(--text-normal);
+}
+
+
+/* Binary asset drop zone in the New Snippet modal. Shown when the selected
+   data content_type is binary (image/*, audio/*, video/*). */
+.forge-modal-drop {
+  border: 2px dashed var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.forge-modal-drop.is-active {
+  border-color: var(--interactive-accent);
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+/* Binary preview hosts in the output panel. The native element fits into the
+   available column; we cap height for video so a long clip doesn't push the
+   rest of the panel offscreen. */
+.forge-output-image .forge-output-image-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.forge-output-audio audio {
+  width: 100%;
+}
+
+.forge-output-video video {
+  max-width: 100%;
+  max-height: 70vh;
+  display: block;
+}
+
+/* "Save as data snippet" affordance below a compute-result entry. Sits on a
+   row of its own so a long result doesn't push the button off-screen. */
+.forge-output-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forge-output-save-btn {
+  font-size: 0.78em;
+  padding: 4px 10px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+}
+
+.forge-output-save-btn:hover {
+  color: var(--text-normal);
+  border-color: var(--interactive-accent);
+}
+
+.forge-modal-meta {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin: 4px 0 12px 0;
+}
+
+/* v0.2.79 retired the edit-mode toggle ribbon button; v0.2.83's
+   gestural mutex permanently replaced the surface. v0.2.84 drops the
+   `.forge-mode-btn` selector. The `.forge-lock-btn.is-drifted` rule
+   stays — pre-v0.2.79 vaults whose snippets still carry the legacy
+   `locked` field can render the drift tint via that older class. */
+.forge-lock-btn.is-drifted svg {
+  color: #cc9a00;
+}
+
+/* Phase 6.5: read-only treatment for the inactive facet of an action
+   snippet. CodeMirror's line decorator tags every line of the inactive
+   facet's body (and its heading) with .forge-facet-readonly. The opacity
+   is exposed as a CSS variable so it's tunable without a code change.
+   Stop at 0.7 — the spec is explicit that the code must stay readable. */
+:root {
+  --forge-facet-readonly-opacity: 0.7;
+}
+
+.forge-facet-readonly {
+  opacity: var(--forge-facet-readonly-opacity);
+}
+
+/* Inline label rendered at the end of the inactive facet's heading line
+   ("read-only · switch to <Other> mode to edit"). The label text lives on
+   a data-attribute applied to the heading's line element by the CodeMirror
+   plugin; ::after pulls it out via attr(). This is more robust than a
+   Decoration.widget because Live Preview's heading folding doesn't
+   relocate ::after content. Subtle italics + muted text so it doesn't
+   compete with the heading. */
+/* v0.2.108 — was a ::after block rendering data-forge-ro-label
+   ("read-only · switch to X mode to edit") on folded facet headings.
+   Removed per cohort UX cleanup (Tamar). The decoration's attribute
+   is gone from facet.ts too. */
+
+/* Snippet UI polish #3: Obsidian's native Properties panel renders at
+   its small UI font (var(--font-ui-small), ~13px), which makes the
+   Properties block visibly smaller than the English / Python /
+   Dependencies sections (editor body text, var(--font-text-size)).
+   Match the body text size so all four sections read at one scale.
+   Scoped to the markdown views (Live Preview source + reading) so the
+   standalone "All properties" core view and other UI surfaces keep
+   Obsidian's intended sizing. Inputs/keys/values are set explicitly
+   because form controls don't inherit font-size from the container. */
+.markdown-source-view .metadata-container,
+.markdown-reading-view .metadata-container,
+.markdown-source-view .metadata-property,
+.markdown-reading-view .metadata-property,
+.markdown-source-view .metadata-property-key,
+.markdown-reading-view .metadata-property-key,
+.markdown-source-view .metadata-property-value,
+.markdown-reading-view .metadata-property-value,
+.markdown-source-view .metadata-property-key-input,
+.markdown-reading-view .metadata-property-key-input,
+.markdown-source-view .metadata-property-value .metadata-input-longtext,
+.markdown-reading-view .metadata-property-value .metadata-input-longtext,
+.markdown-source-view .metadata-property-value input,
+.markdown-reading-view .metadata-property-value input {
+  font-size: var(--font-text-size);
+}
+
+/* "Create new Forge vault" explainer modal. Native modal styling is
+   fine; we only make the steps readable and the BRAT URL copy-distinct. */
+.forge-new-vault-steps li {
+  margin-bottom: 0.5em;
+  line-height: 1.4;
+}
+.forge-new-vault-modal .forge-brat-url {
+  margin-top: 0.4em;
+  padding: 0.4em 0.6em;
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  user-select: all;
+  word-break: break-all;
+}
+
+/* Per-row install status in the "Add domain to this vault" modal. */
+.forge-add-domain-status {
+  margin-left: 0.75em;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* MoDa chips POC — sidebar pane with one (eventually more) chip
+   button. Match Obsidian's native button look; nothing fancy for v1. */
+.forge-moda-chips-view h3 {
+  margin-top: 0;
+}
+.forge-moda-chips-view .forge-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+.forge-moda-chips-view .forge-chip {
+  padding: 0.3em 0.7em;
+  font-size: 0.9em;
+  border-radius: 999px;
+  background: var(--interactive-normal);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+}
+.forge-moda-chips-view .forge-chip:hover {
+  background: var(--interactive-hover);
+}
+
+/* Chips v2 — generalized palette view. Old .forge-moda-chips-view
+   selectors above are left in place harmlessly (no DOM uses them after
+   the v2 rename) — sweeping them belongs to a separate UX-polish pass. */
+.forge-chips-view h3 {
+  margin-top: 0;
+}
+.forge-chips-view .forge-chips-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.4em;
+}
+.forge-chips-view .forge-chips-refresh {
+  padding: 0.2em 0.6em;
+  font-size: 0.8em;
+}
+.forge-chips-view .forge-chips-group {
+  margin-bottom: 0.8em;
+}
+.forge-chips-view .forge-chips-group-header {
+  margin: 0.3em 0;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.forge-chips-view .forge-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+.forge-chips-view .forge-chip {
+  padding: 0.3em 0.7em;
+  font-size: 0.9em;
+  border-radius: 999px;
+  background: var(--interactive-normal);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+}
+.forge-chips-view .forge-chip:hover {
+  background: var(--interactive-hover);
+}
+.forge-chips-view .forge-chips-empty {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+/* Two-vault refactor (constitution A5.1): editor marker for a vault-
+   root snippet that shadows a same-name library snippet. A4
+   resolution makes the root copy authoritative; the marker tells the
+   user at a glance which file they're editing is overriding library
+   behavior. Static class — added/removed via syncShadowMarker on
+   file-open / layout-change, never via active-leaf-change. */
+.forge-shadow-file .markdown-source-view,
+.forge-shadow-file .markdown-reading-view {
+  box-shadow: inset 8px 0 0 var(--text-accent);
+}
+/* Faint header-row tint so the shadow status reads at the tab
+   level too, not just at the editor stripe. Translucent so it
+   plays nicely with both light and dark themes. */
+.forge-shadow-file .view-header {
+  background: color-mix(in srgb, var(--text-accent) 8%, transparent);
+}
+.forge-shadow-file .view-header-title::after {
+  content: " · shadows library";
+  color: var(--text-accent);
+  font-size: 0.85em;
+  font-weight: 500;
+  margin-left: 0.4em;
+}
+
+/* Chips v2-full — sub-group headers within a source group, when
+   chips declare a `group` field (e.g. forge-moda's 16 chips split
+   into Setup / Click / Go / Particle actions / Temperature). */
+.forge-chips-view .forge-chips-subgroup-header {
+  margin: 0.6em 0 0.3em 0;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+/* v0.2.82 Item B — visually de-emphasize `.bak.<version>/` library
+   backups that v0.2.38's auto-re-extract leaves behind. v0.2.78
+   excluded them from snippet discovery; this rule signals to the
+   user that the directory is inert. data-path selector targets
+   Obsidian's file-explorer DOM (.nav-folder-title + .nav-file-title
+   carry data-path attributes for the path they represent). The
+   `.bak.` substring match catches both `<name>.bak.<ver>` and
+   `<name>.bak.<ver>.<n>` (collision suffix). */
+.nav-folder-title[data-path*=".bak."],
+.nav-file-title[data-path*=".bak."] {
+  opacity: 0.55;
+}
+.nav-folder-title[data-path*=".bak."]::after {
+  content: " (backup)";
+  font-size: 0.8em;
+  opacity: 0.7;
+  font-style: italic;
+}
+.nav-file-title[data-path*=".bak."] {
+  text-decoration: line-through;
+}
+
+/* v0.2.109 — frontmatter-fold placeholder widget (REMOVED v0.2.116).
+   Was used for the click-to-expand "⋯" affordance from v0.2.109/
+   v0.2.110/v0.2.111's Decoration.replace approach. None of those
+   approaches ever rendered visibly in Obsidian (override at the
+   renderer level); v0.2.116 switched to CSS-only line-hiding which
+   doesn't use a placeholder widget. CSS preserved-but-commented in
+   case a future drain re-introduces the affordance. */
+/*
+.forge-frontmatter-placeholder { ... }
+*/
+
+/* v0.2.112 Item A — chip palette library section headers.
+   The h4 became a <button> so it's focusable and screen-reader
+   announced as a toggle. Arrow indicates fold state; count shows
+   chip count per library. */
+.forge-chips-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  margin: 8px 0 0;
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-normal);
+  text-align: left;
+  cursor: pointer;
+}
+.forge-chips-group-header:hover {
+  color: var(--interactive-accent);
+}
+.forge-chips-group-arrow {
+  display: inline-block;
+  width: 12px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+.forge-chips-group-label {
+  flex: 1;
+}
+.forge-chips-group-count {
+  font-size: 0.85em;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+/* v0.2.116 — frontmatter HIDE (Tamar overwhelm fix, finally).
+   Eight prior CM6-decoration attempts (v0.2.108→v0.2.115) all
+   silently lost to Obsidian's renderer override. The community
+   gist by @Boettner-eric (referenced in
+   src/frontmatter-fold-view-plugin.ts) revealed the working
+   approach is pure CSS — Obsidian tags every YAML line in source
+   mode with `.cm-hmd-frontmatter`. We hide those lines when the
+   editor root has `.forge-snippet` class. That class is applied
+   conditionally by the EditorView.editorAttributes facet in
+   frontmatter-fold-view-plugin.ts when the document's frontmatter
+   declares `type: action | data`.
+
+   Plain notes (no `type:`) get neither the class nor the rule —
+   their frontmatter renders normally. */
+.forge-snippet .cm-line:has(.cm-hmd-frontmatter) {
+  display: none;
+  height: 0;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* v0.2.118 — Live Preview / Reading mode Properties widget hide.
+   v0.2.117's selector `.forge-snippet .metadata-container` only
+   matched when forge-snippet was on a CM6 ancestor. Cohort smoke
+   showed the Properties widget IS rendered outside the .cm-editor
+   in Live Preview — it's a sibling element under the markdown
+   view container. v0.2.118's main.ts:tagSnippetViews puts the
+   forge-snippet class on the markdown view's containerEl (the
+   parent of BOTH the Properties widget and the .cm-editor), so
+   this selector now resolves.
+
+   !important added to win specificity against Obsidian's built-in
+   metadata-container styles (per the Sascha Kasper wiki entry on
+   "Hide Properties on Specific Notes"). */
+.forge-snippet .metadata-container,
+.forge-snippet .metadata-properties,
+.forge-snippet .metadata-properties-heading {
+  display: none !important;
+}
+
+/* v0.2.119 — Cmd-P toggle escape hatch. When `forge-expanded`
+   class is present on the markdown view's containerEl (set by
+   `Forge: Toggle frontmatter visibility (active snippet)`), the
+   metadata-container + source-mode YAML lines become visible
+   again. Re-toggling the command (or re-opening the file) hides
+   them again. Important note: this rule's selector is stronger
+   than the `.forge-snippet ... display: none !important` above
+   because BOTH .forge-snippet AND .forge-expanded apply, giving
+   it one extra class specificity. */
+.forge-snippet.forge-expanded .metadata-container,
+.forge-snippet.forge-expanded .metadata-properties,
+.forge-snippet.forge-expanded .metadata-properties-heading,
+.forge-snippet.forge-fm-expanded .metadata-container,
+.forge-snippet.forge-fm-expanded .metadata-properties,
+.forge-snippet.forge-fm-expanded .metadata-properties-heading {
+  display: revert !important;
+}
+.forge-snippet.forge-expanded .cm-line:has(.cm-hmd-frontmatter),
+.forge-snippet.forge-fm-expanded .cm-line:has(.cm-hmd-frontmatter) {
+  display: revert;
+  height: revert;
+  line-height: revert;
+  margin: revert;
+  padding: revert;
+}
+
+/* v0.2.139 — granular per-section classes. `forge-fm-expanded`
+   shows only frontmatter; `forge-deps-expanded` shows only
+   Dependencies; `forge-expanded` (legacy from v0.2.119) still works
+   as a "show both" shorthand. tagSnippetViews applies the two
+   granular classes based on the persisted per-snippet state
+   (v0.2.138 expanded-state-core). */
+
+/* v0.2.122 — Dependencies section hide.
+
+   Source mode: makeDependenciesFoldExtension applies Decoration.line
+   with class `forge-deps-line` to every CM6 line inside the
+   `# Dependencies` heading + body. The class lands on the
+   `.cm-line` element directly.
+
+   Live Preview / Reading mode: registerMarkdownPostProcessor walks
+   the rendered HTML and tags the `# Dependencies` heading + each
+   following sibling (until next heading) with `forge-deps-section`.
+
+   Both classes are gated on the parent `.forge-snippet` so plain
+   notes pass through. The `forge-expanded` escape hatch (per
+   v0.2.119) reveals both frontmatter AND Dependencies together
+   when the user runs `Forge: Toggle frontmatter visibility`.
+*/
+.forge-snippet .forge-deps-line,
+.forge-snippet .forge-deps-section {
+  display: none !important;
+}
+
+.forge-snippet.forge-expanded .forge-deps-line,
+.forge-snippet.forge-expanded .forge-deps-section,
+.forge-snippet.forge-deps-expanded .forge-deps-line,
+.forge-snippet.forge-deps-expanded .forge-deps-section {
+  display: revert !important;
+}
+
+/* v0.2.116 — defense-in-depth fallback: if the `.forge-snippet`
+   class fails to apply for some reason (race, Obsidian
+   compartment shenanigans, etc.), the v0.2.112 visual
+   de-emphasis still kicks in. Greys + shrinks YAML lines so
+   they're less prominent without disappearing. The line-class
+   selector matches both the v0.2.112 fallback shape and the
+   v0.2.116 primary fix; the .forge-snippet rule above overrides
+   this with `display: none` when both apply. */
+.markdown-source-view .cm-line.HyperMD-frontmatter,
+.markdown-source-view .cm-line.HyperMD-codeblock.HyperMD-frontmatter,
+.markdown-source-view .cm-line:has(span.cm-hmd-frontmatter) {
+  opacity: 0.45;
+  font-size: 0.85em;
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+}
+.markdown-source-view .cm-line.HyperMD-frontmatter:hover,
+.markdown-source-view .cm-line.HyperMD-codeblock.HyperMD-frontmatter:hover,
+.markdown-source-view .cm-line:has(span.cm-hmd-frontmatter):hover {
+  opacity: 1.0;
+}

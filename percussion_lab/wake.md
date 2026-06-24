@@ -3,6 +3,7 @@ type: action
 description: wake
 inputs: []
 snapshot_capture: false
+edit_mode: python
 ---
 
 # English
@@ -29,14 +30,21 @@ Renders as multiple stacked staves in Verovio (one per instrument that plays any
 
 ```python
 def compute(context):
-    companions = context.compute("companions", bars=8)
-    gathering = context.compute("gathering", bars=4)
-    peak = context.compute("peak", bars=2)
-    dispersing = context.compute("dispersing", bars=8)
-    threading = context.compute("threading", bars=4)
-    resting = context.compute("resting", bars=2)
+    companions_score = context.compute("companions", bars=8)
+    gathering_score = context.compute("gathering", bars=4)
+    peak_score = context.compute("peak", bars=2)
+    dispersing_score = context.compute("dispersing", bars=8)
+    threading_score = context.compute("threading", bars=4)
+    resting_score = context.compute("resting", bars=2)
 
-    return sequence(companions, gathering, peak, dispersing, threading, resting)
+    return sequence(
+        companions_score,
+        gathering_score,
+        peak_score,
+        dispersing_score,
+        threading_score,
+        resting_score,
+    )
 ```
 
 # Dependencies

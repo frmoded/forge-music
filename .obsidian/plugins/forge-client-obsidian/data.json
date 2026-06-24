@@ -1,0 +1,7 @@
+{
+  "serverUrl": "http://localhost:8000",
+  "useDevIframe": false,
+  "transpileServiceUrl": "https://forge.thecodingarena.com",
+  "transpileServiceToken": "Jg2i8-CZiqu4Rl2zTGwHkw7-UzsXH1whF1nB-LoHu0M",
+  "seenWelcome": true
+}
