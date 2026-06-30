@@ -3,7 +3,7 @@ type: snapshot
 caller: authoring/chorus
 callee: authoring/vocal_phrase_b
 state: live
-captured_at: '2026-06-08T21:52:32Z'
+captured_at: '2026-06-30T00:56:06Z'
 content_type: musicxml
 ---
 
@@ -18,7 +18,7 @@ content_type: musicxml
   <identification>
     <creator type="composer">Music21</creator>
     <encoding>
-      <encoding-date>2026-06-08</encoding-date>
+      <encoding-date>2026-06-29</encoding-date>
       <software>music21 v.8.3.0</software>
     </encoding>
   </identification>
@@ -29,21 +29,21 @@ content_type: musicxml
     </scaling>
   </defaults>
   <part-list>
-    <score-part id="Pa73522f74a4e916ca7bf591a5c5e2d9a">
+    <score-part id="P3668aff40f0807822fa8b9474384fb1f">
       <part-name>Voice</part-name>
       <part-abbreviation>V</part-abbreviation>
-      <score-instrument id="If9f798b9e8e68ffcfa3948ac939b3d96">
+      <score-instrument id="I5a743683c381bda6a385a106d6fa5575">
         <instrument-name>Voice</instrument-name>
         <instrument-abbreviation>V</instrument-abbreviation>
       </score-instrument>
-      <midi-instrument id="If9f798b9e8e68ffcfa3948ac939b3d96">
+      <midi-instrument id="I5a743683c381bda6a385a106d6fa5575">
         <midi-channel>1</midi-channel>
         <midi-program>54</midi-program>
       </midi-instrument>
     </score-part>
   </part-list>
   <!--=========================== Part 1 ===========================-->
-  <part id="Pa73522f74a4e916ca7bf591a5c5e2d9a">
+  <part id="P3668aff40f0807822fa8b9474384fb1f">
     <!--========================= Measure 1 ==========================-->
     <measure number="1">
       <attributes>

@@ -337,10 +337,113 @@ def _try_serialize_music21(value, snippet):
 
   from music21.musicxml.m21ToXml import GeneralObjectExporter
   xml_bytes = GeneralObjectExporter(value).parse()
-  return {
+  multi_staff_xml = xml_bytes.decode("utf-8")
+
+  # v0.2.150 — dual-XML production for percussion scores. When the
+  # value is a Score with at least one UnpitchedPercussion Part, also
+  # serialize a kit-notation fold so the plugin's Forge Output pane
+  # can offer the multi-staff ↔ kit toggle. Backward-compat: `content`
+  # remains the multi-staff XML (legacy plugin codepaths render it
+  # unchanged); new fields `has_percussion` + `multi_staff_content` +
+  # `kit_content` opt new plugin codepaths into the toggle.
+  has_perc = False
+  kit_xml = None
+  multi_staff_midi_b64 = None
+  if isinstance(value, music21.stream.Score):
+    try:
+      from forge.music.lib import has_percussion, to_kit_notation
+      has_perc = has_percussion(value)
+      if has_perc:
+        kit_score = to_kit_notation(value)
+        _set_score_title(kit_score, snippet)
+        kit_bytes = GeneralObjectExporter(kit_score).parse()
+        kit_xml = kit_bytes.decode("utf-8")
+    except Exception:
+      # Defensive: if to_kit_notation raises (unexpected music21
+      # shape), drop back to multi-staff-only output. Caller still
+      # gets a renderable score — just no toggle.
+      has_perc = False
+      kit_xml = None
+    # v0.2.157 — direct music21 MIDI export for percussion. Pre-v0.2.157
+    # the plugin used Verovio's renderToMIDI to generate audio bytes
+    # from multi_staff_xml. Driver smoke against v0.2.156 (with audio
+    # diagnostic) showed every percussion note routing to MIDI pitch 60
+    # (High Bongo on channel 10) regardless of the underlying instrument
+    # — Verovio falls back to the default display pitch for Unpitched
+    # notes instead of honoring per-Part <midi-unpitched>NN</midi-
+    # unpitched> from the MusicXML's <midi-instrument> block. music21's
+    # streamToMidiFile renders the same Score directly to standard MIDI
+    # with correct per-Part channel-10 routing + correct percMapPitch
+    # (kick=35, snare=38, hi-hat=44 default / 42 closed / 46 open, etc.)
+    # so SoundFont drums fire the right samples.
+    #
+    # Emitted only when the score has percussion (toggle is offered).
+    # The plugin sees `multi_staff_midi_base64` in the payload and uses
+    # it as the player's MIDI source — bypassing Verovio's incorrect
+    # MIDI rendering. Verovio still renders the SVG + timeMap (display +
+    # highlight tracking unchanged).
+    if has_perc:
+      try:
+        from music21 import midi as _m21midi, note as _note, stream as _stream
+        import io as _io
+        import base64 as _b64
+        import copy as _copy
+        # v0.2.158/v0.2.159 — normalize percussion-Part Note pitches to
+        # each part instrument's percMapPitch BEFORE MIDI export.
+        # forge-music's percussion snippets (solitary, companions,
+        # gathering, etc.) build kicks + hi-hats as
+        # `note.Note('C4', quarterLength=...)` — pitched notes spelled at
+        # C4 = MIDI pitch 60 — attached to a Part whose Instrument is
+        # one of the lib.py percussion factories. music21's MIDI export
+        # correctly puts these on channel 10 (drum) but uses the note's
+        # spelled MIDI pitch (60 = High Bongo) NOT the Part instrument's
+        # percMapPitch. Result: every kick/snare/hi-hat hit broadcasts
+        # on the same drum slot. Driver smoke against v0.2.158 confirmed
+        # this: 394 notes, all pitch=60, all channel 10 = bongo wall.
+        #
+        # Deep-copying the Score and rewriting each Note's
+        # pitch.midi to the Part Instrument's percMapPitch gives music21
+        # the right pitch byte to emit per NOTE_ON event. The original
+        # Score (used for multi_staff_xml + kit_xml + display) is not
+        # mutated. Notes already constructed as note.Unpitched (which
+        # pull pitch from instrument percMap natively) are unaffected.
+        _midi_score = _copy.deepcopy(value)
+        for _part in _midi_score.getElementsByClass(_stream.Part):
+          _inst = _part.getInstrument(returnDefault=False)
+          if _inst is None:
+            continue
+          _pmp = getattr(_inst, "percMapPitch", None)
+          if _pmp is None:
+            continue
+          for _n in _part.recurse().notes:
+            if isinstance(_n, _note.Note):
+              try:
+                _n.pitch.midi = _pmp
+              except Exception:
+                pass
+        _mf = _m21midi.translate.streamToMidiFile(_midi_score)
+        _buf = _io.BytesIO()
+        _mf.openFileLike(_buf)
+        _mf.write()
+        _midi_bytes = _buf.getvalue()
+        _mf.close()
+        multi_staff_midi_b64 = _b64.b64encode(_midi_bytes).decode("ascii")
+      except Exception:
+        multi_staff_midi_b64 = None
+
+  payload = {
     "type": "musicxml",
-    "content": xml_bytes.decode("utf-8"),
+    "content": multi_staff_xml,
   }
+  if has_perc and kit_xml is not None:
+    payload["has_percussion"] = True
+    payload["multi_staff_content"] = multi_staff_xml
+    payload["kit_content"] = kit_xml
+    if multi_staff_midi_b64 is not None:
+      payload["multi_staff_midi_base64"] = multi_staff_midi_b64
+  else:
+    payload["has_percussion"] = False
+  return payload
 
 
 def _set_score_title(stream_, snippet):

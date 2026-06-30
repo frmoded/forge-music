@@ -50,6 +50,13 @@ try:
     "ride_cymbal": _music_lib.ride_cymbal,
     "kick": _music_lib.kick,
     "snare": _music_lib.snare,
+    # v2-spike — V2 high-level chips per v2-spec §16
+    "play_at_beats": _music_lib.play_at_beats,
+    "show_score": _music_lib.show_score,
+    # v2-migration §3 Phase 1 — composite percussion-section chip
+    "play_at_offsets": _music_lib.play_at_offsets,
+    # v2-migration §3 — variadic-list wrapper for sequence()
+    "sequence_list": _music_lib.sequence_list,
   }
 except ImportError:
   _FORGE_MUSIC_LIB_NAMES = {}
@@ -63,6 +70,31 @@ try:
 except ImportError:
   _FORGE_MODA_NAMES = {}
 
+# V2 moda chip library (parallel to _FORGE_MUSIC_LIB_NAMES). Cohort V2
+# snippets `Call [[advance_positions]] with ...` etc; the transpiler
+# emits direct function calls that resolve against these names.
+try:
+  from forge.moda import lib as _moda_lib
+  _FORGE_MODA_LIB_NAMES = {
+    "temperature_to_speed": _moda_lib.temperature_to_speed,
+    "create_chamber": _moda_lib.create_chamber,
+    "create_water_particles": _moda_lib.create_water_particles,
+    "create_ink_particles": _moda_lib.create_ink_particles,
+    "advance_positions": _moda_lib.advance_positions,
+    "bounce_off_walls": _moda_lib.bounce_off_walls,
+    "bounce_off_pairs": _moda_lib.bounce_off_pairs,
+    "detect_collisions": _moda_lib.detect_collisions,
+    "set_speed_for_type": _moda_lib.set_speed_for_type,
+    "set_mass_for_type": _moda_lib.set_mass_for_type,
+    "group_clicks_by_tick": _moda_lib.group_clicks_by_tick,
+    "apply_clicks_at_tick": _moda_lib.apply_clicks_at_tick,
+    "random_name": _moda_lib.random_name,
+    "show_simulation": _moda_lib.show_simulation,
+    "tick_range": _moda_lib.tick_range,
+  }
+except ImportError:
+  _FORGE_MODA_LIB_NAMES = {}
+
 # Domain-scoped global injection (constitution B9 / domain-scoping).
 # Each domain's pre-injected names register under its domain key,
 # mirroring the prompt-fragment registry. The base names (random,
@@ -70,8 +102,61 @@ except ImportError:
 # only these domain bundles are gated.
 _DOMAIN_GLOBALS = {
   "music": {**_MUSIC21_NAMES, **_FORGE_MUSIC_LIB_NAMES},
-  "moda": _FORGE_MODA_NAMES,
+  "moda": {**_FORGE_MODA_NAMES, **_FORGE_MODA_LIB_NAMES},
 }
+
+
+_music_hydration_logged = False
+_moda_hydration_logged = False
+_music_chips_diagnostic_logged = False
+
+
+def _diagnose_music_chips_empty(domains, where: str) -> None:
+  """Called when music_active but _FORGE_MUSIC_LIB_NAMES is empty during
+  exec — surfaces the runtime state to console.error so the cause of the
+  empty bundle is visible without having to capture the pyodide bootstrap
+  log. Fires at most ONCE per session via the diagnostic-logged sentinel.
+
+  Logged state covers the wheel-mount layer (filesystem state) AND the
+  Python import layer (whether music21 imports cleanly + whether
+  forge.music.lib imports + whether play_at_offsets is reachable),
+  so a glance at the output identifies the broken hop.
+  """
+  global _music_chips_diagnostic_logged
+  if _music_chips_diagnostic_logged:
+    return
+  _music_chips_diagnostic_logged = True
+  import sys, os
+  out = sys.stderr
+  print("=== Forge music-chip-empty diagnostic ===", file=out)
+  print(f"  triggered from: {where}", file=out)
+  print(f"  active domains: {domains!r}", file=out)
+  print(f"  hydration logged (suppresses further logs): {_music_hydration_logged}", file=out)
+  print(f"  _FORGE_MUSIC_LIB_NAMES count: {len(_FORGE_MUSIC_LIB_NAMES)}", file=out)
+  print(f"  /bundle/wheels exists: {os.path.isdir('/bundle/wheels')}", file=out)
+  if os.path.isdir("/bundle/wheels"):
+    contents = sorted(os.listdir("/bundle/wheels"))
+    print(f"    /bundle/wheels: {len(contents)} entries; first 5: {contents[:5]}", file=out)
+  print(f"  /bundle/site-packages exists: {os.path.isdir('/bundle/site-packages')}", file=out)
+  if os.path.isdir("/bundle/site-packages"):
+    sp = sorted(os.listdir("/bundle/site-packages"))
+    print(f"    /bundle/site-packages: {len(sp)} entries; first 5: {sp[:5]}", file=out)
+    print(f"    music21 dir in site-packages: {'music21' in sp}", file=out)
+  print(f"  sys.path[:3]: {sys.path[:3]}", file=out)
+  try:
+    import music21
+    v = getattr(music21, "VERSION_STR", None) or getattr(music21, "__version__", "?")
+    print(f"  `import music21` → OK (version={v})", file=out)
+  except Exception as e:
+    print(f"  `import music21` → FAILED: {type(e).__name__}: {e}", file=out)
+  try:
+    from forge.music import lib as _probe_lib
+    print(f"  `from forge.music import lib` → OK", file=out)
+    print(f"    has play_at_offsets: {hasattr(_probe_lib, 'play_at_offsets')}", file=out)
+    print(f"    has kick: {hasattr(_probe_lib, 'kick')}", file=out)
+  except Exception as e:
+    print(f"  `from forge.music import lib` → FAILED: {type(e).__name__}: {e}", file=out)
+  print("=== end Forge music-chip-empty diagnostic ===", file=out)
 
 
 def _domain_globals_for(domains):
@@ -81,7 +166,145 @@ def _domain_globals_for(domains):
                        not declare `domains` in forge.toml).
   domains is []    -> {} (core-only: just the base names).
   domains is [...] -> only those domains' bundles.
+
+  v0.2.170 — when the music bundle is empty (because forge.music.lib
+  failed to import at executor-load time, typically because music21
+  wheels hadn't been mounted into pyodide yet), retry the import here
+  at call time. Driver smoke v0.2.169: murmuration crashed inside a
+  nested snippet exec with `NameError: play_at_offsets is not defined`
+  because pyodide's wheel mount happens AFTER executor.py's top-level
+  try/except already cached an empty bundle.
+
+  v0.3.x (post-v0.2.176) — two perf-critical guards on the retry path,
+  surfaced when the moda V2 simulation Forge-clicked from bluh vault
+  triggered "music-domain lazy hydration FAILED — No module named
+  'music21'" on EVERY chip call (hundreds of failed imports per
+  per-tick simulation step → tons of stderr trace output → multi-
+  second click→ink lag):
+  1. Only attempt music hydration when `"music"` is in active domains
+     (skip entirely for moda-only or tutorial-only vaults — music21
+     wheels are huge and probing when the vault never needs music
+     is pure waste).
+  2. Cache the stderr LOG (not the attempt) per domain. v0.2.177 also
+     cached the attempt itself, but that turned out too aggressive:
+     bluh vault's simulation hit a wheel-mount race where music21
+     wasn't ready yet on the first chip call, the failure cached, and
+     a subsequent Forge-click on murmuration (run minutes later, after
+     wheels had mounted) silently used the empty music chip dict →
+     `NameError: play_at_offsets is not defined`. v0.2.178 reverts
+     the attempt-cache and keeps only the log-cache: every call re-
+     attempts the import (so wheel-mount races resolve on their own),
+     but the failure trace prints to stderr at most ONCE per session.
   """
+  global _FORGE_MUSIC_LIB_NAMES, _FORGE_MODA_LIB_NAMES, _DOMAIN_GLOBALS
+  global _music_hydration_logged, _moda_hydration_logged
+
+  music_active = domains is None or "music" in domains
+  moda_active = domains is None or "moda" in domains
+
+  if music_active and not _FORGE_MUSIC_LIB_NAMES:
+    # Catch the BROAD set of exceptions (not just ImportError) — pyodide
+    # often surfaces partial-wheel issues as AttributeError, ModuleNotFoundError,
+    # or other shapes. v0.2.170's narrow `except ImportError` silently swallowed
+    # whichever shape the driver was hitting; surface the actual exception to
+    # stdout so the runtime log shows the root cause.
+    try:
+      from forge.music import lib as _music_lib_lazy
+      _FORGE_MUSIC_LIB_NAMES = {
+        name: getattr(_music_lib_lazy, name)
+        for name in (
+          "bar", "voices", "voices_canonical", "sequence", "repeat",
+          "minor_pentatonic", "major_pentatonic", "with_velocity",
+          "closed_hihat", "open_hihat", "pedal_hihat",
+          "low_tom", "mid_tom", "high_tom",
+          "crash_cymbal", "ride_cymbal", "kick", "snare",
+          "play_at_beats", "show_score",
+          "play_at_offsets", "sequence_list",
+        )
+        if hasattr(_music_lib_lazy, name)
+      }
+      _DOMAIN_GLOBALS = dict(_DOMAIN_GLOBALS)
+      _DOMAIN_GLOBALS["music"] = {**_MUSIC21_NAMES, **_FORGE_MUSIC_LIB_NAMES}
+      import sys as _sys
+      print(
+        f"Forge: music chips hydrated lazily — "
+        f"{len(_FORGE_MUSIC_LIB_NAMES)} chips registered",
+        file=_sys.stderr,
+      )
+    except Exception as e:
+      # Log the failure trace at most ONCE per session — subsequent
+      # retries (wheel-mount race recovery) stay silent so a 1500-
+      # chip-call simulation doesn't flood the console with duplicate
+      # tracebacks. The retry itself still runs every call until it
+      # succeeds (or the session ends).
+      if not _music_hydration_logged:
+        _music_hydration_logged = True
+        import sys as _sys
+        import traceback as _tb
+        print(
+          f"Forge: music-domain lazy hydration FAILED — "
+          f"{type(e).__name__}: {e} "
+          f"(retries will run silently until music21 is mountable)",
+          file=_sys.stderr,
+        )
+        _tb.print_exc(file=_sys.stderr)
+
+  # Parallel lazy hydration for moda. Same root cause: forge.moda.lib
+  # imports numpy at top-level, and pyodide's numpy wheel mount can
+  # happen *after* executor.py's module-load try/except runs. Same
+  # active-domain gate + log-once-on-failure pattern as music.
+  if moda_active and not _FORGE_MODA_LIB_NAMES:
+    try:
+      from forge.moda import lib as _moda_lib_lazy
+      from forge.moda.types import (
+        Particle as _ModaParticleLazy,
+        ParticleState as _ModaParticleStateLazy,
+      )
+      _FORGE_MODA_LIB_NAMES = {
+        name: getattr(_moda_lib_lazy, name)
+        for name in (
+          "temperature_to_speed",
+          "create_chamber", "create_water_particles", "create_ink_particles",
+          "advance_positions", "bounce_off_walls", "bounce_off_pairs",
+          "detect_collisions",
+          "set_speed_for_type", "set_mass_for_type",
+          "group_clicks_by_tick", "apply_clicks_at_tick",
+          "random_name", "show_simulation", "tick_range",
+        )
+        if hasattr(_moda_lib_lazy, name)
+      }
+      _DOMAIN_GLOBALS = dict(_DOMAIN_GLOBALS)
+      _DOMAIN_GLOBALS["moda"] = {
+        "Particle": _ModaParticleLazy,
+        "ParticleState": _ModaParticleStateLazy,
+        **_FORGE_MODA_LIB_NAMES,
+      }
+      import sys as _sys
+      print(
+        f"Forge: moda chips hydrated lazily — "
+        f"{len(_FORGE_MODA_LIB_NAMES)} chips registered",
+        file=_sys.stderr,
+      )
+    except Exception as e:
+      if not _moda_hydration_logged:
+        _moda_hydration_logged = True
+        import sys as _sys
+        import traceback as _tb
+        print(
+          f"Forge: moda-domain lazy hydration FAILED — "
+          f"{type(e).__name__}: {e} "
+          f"(retries will run silently until numpy is mountable)",
+          file=_sys.stderr,
+        )
+        _tb.print_exc(file=_sys.stderr)
+
+  # v0.2.181 — if music is active but the chip dict is STILL empty after
+  # the retry above, fire a one-shot diagnostic so the cause shows up in
+  # the snippet's stderr trace at the moment of failure (no need to scroll
+  # back to the pyodide bootstrap log to find it).
+  if music_active and not _FORGE_MUSIC_LIB_NAMES:
+    _diagnose_music_chips_empty(domains, where="_domain_globals_for")
+
   if domains is None:
     selected = _DOMAIN_GLOBALS.values()
   else:
@@ -340,7 +563,11 @@ def read_data_snippet(snippet):
   )
   meta = snippet["meta"]
   snippet_id = snippet["snippet_id"]
-  content_type = meta.get("content_type")
+  # v2-spec §3.4 — V2 data notes declare format via `body_format:`.
+  # V1 used `content_type:`. Honor both so V1 + V2 notes coexist; the
+  # tutorial migration to V2 (v0.2.167) hit this gap because data
+  # notes' `body_format: json` previously raised "no content_type".
+  content_type = meta.get("content_type") or meta.get("body_format")
   if not content_type:
     raise ValueError(
       f"data snippet '{snippet_id}' has no content_type in frontmatter")
@@ -498,6 +725,47 @@ def resolve_action_code(snippet, slot_resolutions=None, force=False):
   Raises:
     - SlotCacheMissError when slots can't be resolved (first pass).
   """
+  # v2-spike — V2 shape detection. If the snippet body has a `# E--`
+  # heading (the V2 dialect), parse + transpile via forge.recipe
+  # and return the resulting Python. V1 notes (with `# English` + `# Python`)
+  # fall through to the legacy path below unchanged.
+  #
+  # v0.2.191 — V2.1 slot resolution Phase 2: wire the V2 transpile to the
+  # same `build_engine_slot_resolver` + SlotCacheMissError flow V1 uses
+  # below (line 805+). When the parsed module contains SlotExpr nodes,
+  # the resolver checks the snippet's slot_resolutions cache by
+  # (slot_text, snippet_id); cache miss → collector accumulates →
+  # SlotCacheMissError → plugin handles via /resolve-slot round-trip
+  # (handleSlotCacheMiss in main.ts already does this for V1, no
+  # plugin-side changes needed).
+  try:
+    from forge.recipe import detect_recipe_shape as _v2_detect
+    from forge.recipe import extract_recipe_body as _v2_extract
+    from forge.recipe import extract_inputs_declarations as _v2_inputs
+    from forge.recipe import parse as _v2_parse
+    from forge.recipe import transpile as _v2_transpile
+    if _v2_detect(snippet["body"]):
+      emm = _v2_extract(snippet["body"])
+      inputs = _v2_inputs(snippet["body"])
+      v2_snippet_id = snippet.get("snippet_id", "<unknown>")
+      from forge.core.slot_cache import (
+        build_engine_slot_resolver as _v2_slot_resolver_factory,
+        SlotCacheMissError as _V2SlotCacheMissError,
+      )
+      v2_slot_cache = slot_resolutions or {}
+      v2_missing = []
+      v2_resolver = _v2_slot_resolver_factory(
+        v2_snippet_id, v2_slot_cache, v2_missing,
+      )
+      v2_code = _v2_transpile(
+        _v2_parse(emm), inputs=inputs, resolve_slot=v2_resolver,
+      )
+      if v2_missing:
+        raise _V2SlotCacheMissError(v2_missing)
+      return v2_code
+  except ImportError:
+    pass
+
   code = extract_python(snippet["body"])
   meta = snippet["meta"]
   edit_mode = meta.get("edit_mode", "english")

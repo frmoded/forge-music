@@ -1,26 +1,20 @@
 ---
 type: action
-inputs: []
-facet_form: canonical
-description: Chapter 9 — Forge fills in a value from your plain-English request.
-english_hash: 8002397c045b8b1f02f9b28aa9c858bf6274d1533df00f2684357a3a479b3d73
-edit_mode: python
-locked_english_hash: 8002397c045b8b1f02f9b28aa9c858bf6274d1533df00f2684357a3a479b3d73
 ---
 
-# English
+# Description
 
-Set fact to {{a very interesting fact about octopuses}}.
-Do [[print]](fact).
+Chapter 9 — Forge fills in a value from your plain-English request.
 
-# Python
+The `{{...}}` syntax is the V2.1 "expressiveness escape valve": when
+you can't (or don't want to) deterministically specify a value in
+the Recipe, write a free-English description between double-braces.
+Forge routes that description to an LLM at compile time; the resolved
+expression is cached in this note's frontmatter so subsequent
+Forge-clicks are instant. Edit the description text → cache key
+changes → re-resolves on the next click.
 
-```python
-def compute(context):
-    fact = "Octopuses have three hearts and blue blood"
-    print(fact)
-```
+# Recipe
 
-# Dependencies
-
-[[print]]
+Let fact = {{a random fun fact about octopuses}}.
+[[print]] fact.

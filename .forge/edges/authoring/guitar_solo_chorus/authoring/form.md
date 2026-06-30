@@ -3,7 +3,7 @@ type: snapshot
 caller: authoring/guitar_solo_chorus
 callee: authoring/form
 state: live
-captured_at: '2026-06-08T21:52:31Z'
+captured_at: '2026-06-30T00:56:06Z'
 content_type: musicxml
 ---
 
@@ -18,7 +18,7 @@ content_type: musicxml
   <identification>
     <creator type="composer">Music21</creator>
     <encoding>
-      <encoding-date>2026-06-08</encoding-date>
+      <encoding-date>2026-06-29</encoding-date>
       <software>music21 v.8.3.0</software>
     </encoding>
   </identification>
@@ -29,21 +29,21 @@ content_type: musicxml
     </scaling>
   </defaults>
   <part-list>
-    <score-part id="Pf71984595cc8c54df31c5ac932556e59">
+    <score-part id="Pe76635c6c8cd0259e04aa2176d8a6ede">
       <part-name>Piano</part-name>
       <part-abbreviation>Pno</part-abbreviation>
-      <score-instrument id="Ib437e559abc7a0025710972483ef3f7f">
+      <score-instrument id="I728807bfb99ebbd7b6a8d6800af09505">
         <instrument-name>Piano</instrument-name>
         <instrument-abbreviation>Pno</instrument-abbreviation>
       </score-instrument>
-      <midi-instrument id="Ib437e559abc7a0025710972483ef3f7f">
+      <midi-instrument id="I728807bfb99ebbd7b6a8d6800af09505">
         <midi-channel>1</midi-channel>
         <midi-program>1</midi-program>
       </midi-instrument>
     </score-part>
   </part-list>
   <!--=========================== Part 1 ===========================-->
-  <part id="Pf71984595cc8c54df31c5ac932556e59">
+  <part id="Pe76635c6c8cd0259e04aa2176d8a6ede">
     <!--========================= Measure 1 ==========================-->
     <measure number="1">
       <attributes>
