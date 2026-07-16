@@ -316,6 +316,63 @@ def _try_serialize_particle_state(value, snippet):
   }
 
 
+def _normalize_percussion_display_pitches(value):
+  """v0.2.216 — Return a copy of `value` with percussion-Part Note
+  pitches normalized to display-appropriate positions for visual
+  MusicXML serialization.
+
+  Background: lib.play_at_beats + play_at_offsets stamp each Note's
+  pitch.midi to the Part's instrument percMapPitch (kick=35=B1,
+  snare=38=D2, closed-hi-hat=42=F#2, etc.) so streamToMidiFile fires
+  the right channel-10 drum slot — the v0.2.159 bongo-wall fix.
+  Those literal pitches render BELOW the bass staff in MusicXML
+  multi-staff output, which cohort sees as "the score is an octave
+  or two too low."
+
+  This helper deep-copies the score and replaces each percussion
+  Note's pitch with the kit-notation display position (kick→F4,
+  snare→C5, hi-hat→G5, etc.). Verovio renders each Part on its own
+  staff at a treble-clef-readable position. Original `value` stays
+  untouched so the MIDI export path keeps its percMapPitch routing.
+
+  Non-percussion Parts (and non-Score input) pass through unchanged.
+  """
+  try:
+    import music21
+    from music21 import note as _note, stream as _stream, pitch as _pitch
+    from forge.music.lib import _kit_lookup
+  except ImportError:
+    return value
+  if not isinstance(value, music21.stream.Stream):
+    return value
+  import copy as _copy
+  display = _copy.deepcopy(value)
+  parts: list = []
+  if isinstance(display, music21.stream.Score):
+    parts = list(display.getElementsByClass(_stream.Part))
+  elif isinstance(display, music21.stream.Part):
+    parts = [display]
+  for part in parts:
+    inst = part.getInstrument(returnDefault=False)
+    if inst is None:
+      continue
+    info = _kit_lookup(inst)
+    if info is None:
+      continue
+    display_name, _voice, _notehead = info
+    try:
+      display_midi = _pitch.Pitch(display_name).midi
+    except Exception:
+      continue
+    for n in part.recurse().notes:
+      if isinstance(n, _note.Note):
+        try:
+          n.pitch.midi = display_midi
+        except Exception:
+          pass
+  return display
+
+
 def _try_serialize_music21(value, snippet):
   """Return a tagged MusicXML payload if value is a music21 object, else None."""
   try:
@@ -336,7 +393,20 @@ def _try_serialize_music21(value, snippet):
   _set_score_title(value, snippet)
 
   from music21.musicxml.m21ToXml import GeneralObjectExporter
-  xml_bytes = GeneralObjectExporter(value).parse()
+  # v0.2.216 — normalize percussion-Part Note pitches for VISUAL
+  # multi-staff display. lib.play_at_beats + play_at_offsets stamp
+  # pitch.midi = percMapPitch (kick=35=B1, snare=38=D2, hi-hat=42=F#2,
+  # etc.) so streamToMidiFile fires the right channel-10 drum slot
+  # (per the v0.2.159 bongo-wall fix). But those pitches render WAY
+  # below the staff in MusicXML — the driver hit this on the v0.2.215
+  # smoke ("octave or two too low"). Build a separate display copy
+  # with each percussion Part's notes lifted to a treble-staff-
+  # readable position (kick→F4, snare→C5, closed-hi-hat→G5, etc. —
+  # same map the kit_notation transform uses for compact display).
+  # Original `value` is unchanged → MIDI export downstream still gets
+  # the percMapPitch routing it needs.
+  display_value = _normalize_percussion_display_pitches(value)
+  xml_bytes = GeneralObjectExporter(display_value).parse()
   multi_staff_xml = xml_bytes.decode("utf-8")
 
   # v0.2.150 — dual-XML production for percussion scores. When the
@@ -452,17 +522,35 @@ def _set_score_title(stream_, snippet):
   Title precedence: explicit `title:` in frontmatter, else the bare snippet
   ID (filename). Description is intentionally not used — it's for docs, not
   display, and renaming a snippet should change the rendered title.
+
+  Also strips music21's default composer + software credits so MuseScore
+  (and other renderers) don't display a "Music21" watermark in the top-
+  right of the rendered score. Cohort-facing scores should show the
+  cohort's title alone.
   """
-  if snippet is None:
-    return
-  meta = snippet.get("meta") or {}
-  title = meta.get("title") or _bare_id(snippet.get("snippet_id"))
-  if not title:
-    return
   import music21
   if stream_.metadata is None:
     stream_.insert(0, music21.metadata.Metadata())
-  stream_.metadata.title = str(title).strip()
+
+  # Set title if we have snippet metadata.
+  if snippet is not None:
+    meta = snippet.get("meta") or {}
+    title = meta.get("title") or _bare_id(snippet.get("snippet_id"))
+    if title:
+      stream_.metadata.title = str(title).strip()
+
+  # Scrub music21's default self-attribution. `composer` renders as a
+  # top-right credit in MuseScore + Verovio; `software` renders as a
+  # footer in some SVG paths. Either can look like "Music21" in the
+  # output. Setting to empty string suppresses both cleanly.
+  try:
+    stream_.metadata.composer = ""
+  except Exception:
+    pass
+  try:
+    stream_.metadata.software = []
+  except Exception:
+    pass
 
 
 def _bare_id(snippet_id):

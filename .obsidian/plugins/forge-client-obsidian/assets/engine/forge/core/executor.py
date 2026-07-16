@@ -57,6 +57,32 @@ try:
     "play_at_offsets": _music_lib.play_at_offsets,
     # v2-migration §3 — variadic-list wrapper for sequence()
     "sequence_list": _music_lib.sequence_list,
+    # v2-migration — variadic-list wrapper for voices()
+    "voices_list": _music_lib.voices_list,
+    # v2-migration — variadic-list wrapper for bar()
+    "bar_list": _music_lib.bar_list,
+    # v0.7.0 — forge-music library notes promoted from engineer-mode vault
+    # notes (drain 2026-07-01-1800). These ARE the chord/form/drum/melody
+    # primitives that song.md, chorus.md, solo_chorus.md, and loom.md
+    # compose. Pre-v0.7.0 they sat in vault as `.md` files with
+    # `edit_mode: python` + stub Recipes.
+    "form": _music_lib.form,
+    "drum_chorus": _music_lib.drum_chorus,
+    "drums_shuffle": _music_lib.drums_shuffle,
+    "guitar_solo_chorus": _music_lib.guitar_solo_chorus,
+    "vocal_phrase_a": _music_lib.vocal_phrase_a,
+    "vocal_phrase_b": _music_lib.vocal_phrase_b,
+    "phase_cell": _music_lib.phase_cell,
+    "phase_shifter": _music_lib.phase_shifter,
+    # Drain 2026-07-10-1400 phase 1 — walking upright/electric bass over
+    # a harmonic form. Deterministic per the pinned design decisions.
+    "walking_bass_line": _music_lib.walking_bass_line,
+    # Drain 2026-07-10-1340 phases 2-4 — piano voicings, violin bowing,
+    # vocal line. Deterministic per the pinned design decisions
+    # (D-note-1, D-note-2, D-note-4).
+    "piano_voicing": _music_lib.piano_voicing,
+    "violin_bowing": _music_lib.violin_bowing,
+    "vocal_line": _music_lib.vocal_line,
   }
 except ImportError:
   _FORGE_MUSIC_LIB_NAMES = {}
@@ -219,7 +245,9 @@ def _domain_globals_for(domains):
           "low_tom", "mid_tom", "high_tom",
           "crash_cymbal", "ride_cymbal", "kick", "snare",
           "play_at_beats", "show_score",
-          "play_at_offsets", "sequence_list",
+          "play_at_offsets", "sequence_list", "voices_list", "bar_list",
+          "form", "drum_chorus", "drums_shuffle", "guitar_solo_chorus",
+          "vocal_phrase_a", "vocal_phrase_b", "phase_cell", "phase_shifter",
         )
         if hasattr(_music_lib_lazy, name)
       }
@@ -682,7 +710,8 @@ def extract_section(body, heading):
   return "\n".join(section_lines).strip() or None
 
 
-def resolve_action_code(snippet, slot_resolutions=None, force=False):
+def resolve_action_code(snippet, slot_resolutions=None, force=False,
+                        source_layer=None, canonical_layer=None):
   """Return the Python code for an action snippet, transpiling via
   E--'s deterministic compiler when E-- can compile the English
   facet, falling back to None (plugin handles /generate routing)
@@ -738,6 +767,47 @@ def resolve_action_code(snippet, slot_resolutions=None, force=False):
   # SlotCacheMissError → plugin handles via /resolve-slot round-trip
   # (handleSlotCacheMiss in main.ts already does this for V1, no
   # plugin-side changes needed).
+  # v0.2.222 — engineer-mode short-circuit. When the snippet declares
+  # `edit_mode: python` the cohort is taking ownership of the # Python
+  # facet; the # Recipe section is documentation/comment only and may
+  # not be parseable E--. Return the extracted Python directly so
+  # transitive `context.compute("X")` calls (which can't see the
+  # plugin's python-mode routing) work the same way the top-level
+  # Forge-click does. Pre-v0.2.222 the engine tried V2 parse first
+  # and exploded on stub Recipes like `<!-- engineer-mode -->`.
+  if snippet["meta"].get("edit_mode") == "python":
+    code = extract_python(snippet["body"])
+    if code is not None:
+      return code
+
+  # v0.2.252 drain 2026-07-03-1000 §3.3 (L45 impl) — plugin's routing
+  # signal short-circuits the V2 parse when the plugin has already
+  # declared Python the source facet. Pre-v0.2.252 the engine ran V2
+  # parse unconditionally and a stale/broken Recipe (residue from prior
+  # smoke) would blow up ParseError even when the plugin correctly
+  # decided Python was the source-of-truth. When source_layer ==
+  # "python" the plugin has confirmed the # Python facet is the
+  # authoritative source; skip the V2 parse + transpile chain and
+  # return extracted Python directly.
+  # v0.2.286 — routing signal was renamed source_layer (from
+  # canonical_layer). The old keyword name is still accepted for
+  # back-compat during the S9 field rename; delete in v0.2.290.
+  layer = source_layer if source_layer is not None else canonical_layer
+  if layer == "python":
+    code = extract_python(snippet["body"])
+    if code is not None:
+      return code
+
+  # v0.2.252 — description-source short-circuit. The plugin's
+  # forgeSnippet path aborts early with a "run /generate first"
+  # message when Description is the source facet, so this path is
+  # only hit by transitive `context.compute("X")` calls where the
+  # transitive snippet is Description-source. Same reasoning: skip
+  # the V2 parse (Recipe is stale by definition when Description is
+  # source) and return None so the caller routes to /generate.
+  if layer == "description":
+    return None
+
   try:
     from forge.recipe import detect_recipe_shape as _v2_detect
     from forge.recipe import extract_recipe_body as _v2_extract

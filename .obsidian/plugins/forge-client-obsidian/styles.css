@@ -977,22 +977,73 @@
   background-color: rgba(255, 235, 59, 0.6);
 }
 
-/* v0.2.205 — Implicit locking Phase 2.5 §2.1: stale-facet visual
- * indicator. Applied via Decoration.mark by stale-facet-view-plugin
- * to the content range of each H1 facet (Description / Recipe /
- * Python) whose stored hash doesn't match its current content. */
-.forge-stale-facet {
+/* v0.2.264 — Constitution V2a v11.6 hexa-state visibility.
+ * Six suffix states: source / derived from Description /
+ * derived from Recipe / derived from Description, out of date /
+ * derived from Recipe, out of date / ignored. Body opacity:
+ *   source: 100% (no body decoration)
+ *   derived: 60% (.forge-facet-derived)
+ *   out of date: 50% (.forge-facet-out-of-date)
+ *   ignored: 40% (.forge-facet-ignored — renamed from .forge-facet-stale)
+ * COHORT CSS BREAKAGE NOTE: any custom theme referencing
+ * .forge-facet-stale should update to .forge-facet-ignored. */
+
+.forge-facet-derived {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.forge-facet-derived:hover {
+  opacity: 0.8;
+}
+
+.forge-facet-out-of-date {
   opacity: 0.5;
   font-style: italic;
 }
 
-.forge-stale-facet:hover {
+.forge-facet-out-of-date:hover {
   opacity: 0.75;
+}
+
+.forge-facet-ignored {
+  opacity: 0.4;
+  font-style: italic;
+}
+
+.forge-facet-ignored:hover {
+  opacity: 0.65;
+}
+
+/* Suffix widgets. Base style shared; per-state color signals level. */
+.forge-facet-suffix {
+  font-style: italic;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+.forge-facet-suffix-source {
+  color: var(--text-accent);
+  opacity: 0.85;
+}
+
+.forge-facet-suffix-derived_from_description,
+.forge-facet-suffix-derived_from_recipe {
+  opacity: 0.6;
+}
+
+.forge-facet-suffix-derived_from_description_out_of_date,
+.forge-facet-suffix-derived_from_recipe_out_of_date {
+  opacity: 0.5;
+}
+
+.forge-facet-suffix-ignored {
+  opacity: 0.4;
 }
 
 /* v0.2.205 — Phase 2.5 §2.2 + §2.3 niceties: status bar entry +
  * confirm modal button row. */
-.forge-canonical-layer-status {
+.forge-source-layer-status {
   cursor: pointer;
 }
 
@@ -1048,4 +1099,91 @@
   background-color: rgba(120, 200, 120, 0.18);
   border-bottom: 1px dashed rgba(60, 140, 60, 0.5);
   font-style: italic;
+}
+
+/* v0.2.229 — Status-bar spinner: force-visible with high-contrast
+ * background. Driver smoke 2026-07-01-2200 confirmed the full
+ * pipeline fires (wrap → grace → setText → DOM-update logs all
+ * appear in console) but the visible status bar shows nothing
+ * (Scenario A). Theory: Obsidian's status-bar container may
+ * collapse the item when its computed color is too close to the
+ * background, OR the cascade hides it via display/visibility.
+ *
+ * Strengthened: explicit !important on display + padding + min-
+ * width to ensure measurable space; high-contrast background
+ * (warning color) + black text so even if `--text-accent` resolves
+ * to a near-background color in the active theme, the box is still
+ * visible. Pulse animation preserved but the visibility baseline no
+ * longer depends on opacity alone. */
+.forge-spinner-status:not(:empty) {
+  display: inline-block !important;
+  padding: 0 8px !important;
+  min-width: 8em !important;
+  background-color: var(--background-modifier-warning, #ffb86c) !important;
+  color: var(--text-on-accent, #000) !important;
+  font-weight: 700 !important;
+  border-radius: 4px;
+  animation: forge-spinner-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes forge-spinner-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.72; }
+}
+
+/* v0.2.229 — LibraryNoteView section foldability + h1-replacement
+ * styling. <details>/<summary> get default browser styling which
+ * looks plain next to Obsidian's heading hierarchy. Make summary
+ * look like a heading + show a fold indicator. */
+.forge-library-note-section {
+  margin: 16px 0;
+}
+.forge-library-note-section > summary {
+  cursor: pointer;
+  font-size: var(--h1-size, 2em);
+  font-weight: var(--h1-weight, 800);
+  margin-bottom: 8px;
+  list-style: none;
+  user-select: none;
+}
+.forge-library-note-section > summary::-webkit-details-marker {
+  display: none;
+}
+.forge-library-note-section > summary::before {
+  content: "▼ ";
+  font-size: 0.7em;
+  color: var(--text-muted);
+}
+.forge-library-note-section:not([open]) > summary::before {
+  content: "▶ ";
+}
+
+/* v0.2.221 — "Forge: Re-extract bundled library vault" modal. The
+ * warning banner sits above the picker; red border so cohort can't
+ * miss the destructive-action notice. Picker + button row use the
+ * usual modal spacing — no surprises. */
+.forge-re-extract-warning {
+  border: 1px solid var(--background-modifier-error);
+  background: var(--background-modifier-error-rgb, rgba(200, 60, 60, 0.08));
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.forge-re-extract-picker {
+  margin: 12px 0 18px 0;
+}
+
+.forge-re-extract-row {
+  margin: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forge-re-extract-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
